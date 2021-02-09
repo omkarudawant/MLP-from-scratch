@@ -6,7 +6,6 @@ np.warnings.filterwarnings("ignore")
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from scipy.stats.stats import pearsonr
 from sklearn.model_selection import train_test_split
 from random import random
 
@@ -109,6 +108,14 @@ class MLP(object):
             )
 
     def _create_mini_batches(self, X, y, batch_size):
+        """Create mini batches for Mini-Batch Gradient Descent
+        Args:
+            X (ndarray): Independent features
+            y (ndarray): Labels/Training values of dependent variable
+            batch_size (integer): Batch size for Mini Batches
+        Returns:
+            batches (list): List of Mini batches
+        """
         # create mini batches
         batches = list()
         combined = np.hstack((X, y.reshape(-1, 1)))
@@ -142,12 +149,18 @@ class MLP(object):
         plot_error=False,
         verbose=0,
     ):
-        """Trains model running forward prop and backprop
+        """Trains model by forward pass and backpropagation with Mini-Batch Gradient Descent and L2 regularized loss
         Args:
-            X: inputs (ndarray)
-            y: targets (ndarray)
-            epochs (int): Num. epochs we want to train the network for
+            X_train: Training inputs (ndarray)
+            y_train: Training targets (ndarray)
+            X_test: Testing inputs (ndarray)
+            y_test: TrainTestinging targets (ndarray)
+            epochs (int): Number of epochs we want to train the network for
+            batch_size (integer): Batch size for Mini Batches
             learning_rate (float): Step to apply to gradient descent
+            regularization (float): L2 regularization parameter (lambda)
+            plot_error (boolean): Whether to plot train vs test error plot
+            verbose (integer): Verbose level. Can be either of [1, 2]
         """
         train_error = list()
         test_error = list()
@@ -237,16 +250,28 @@ class MLP(object):
             weights += derivatives * learningRate
 
     def _plot_errors(self, train_error, test_error):
+        """Plot Train Vs Test Error and save the figure
+        Args:
+            train_error (iterable): An iterable with train error values for all epochs
+            test_error (iterable): An iterable with test error values for all epochs
+        """
         plt.plot(range(len(train_error)), train_error, label="Train error")
         plt.plot(range(len(test_error)), test_error, label="Test error")
         plt.xlabel("Steps")
         plt.ylabel("Error")
         plt.title("Train Vs Test Error plot")
         plt.legend(loc="best")
-        plt.savefig("error_plot.png")
+        plt.savefig("train_vs_test_error.png")
 
     def score(self, true, pred):
-        assert len(true) == len(pred), "Lengths of true and pred does not match"
+        """ Get MSE of trained network
+        Args:
+            true (ndarray): True values
+            pred (ndarray): Predicted values
+        Returns:
+            mse (float): Mean Squared Error value
+        """
+        assert len(true) == len(pred), "Lengths of true and pred should match"
         if not type(true) is np.ndarray and not type(pred) is np.ndarray:
             true = np.array(true)
             pred = np.array(pred)
@@ -300,9 +325,3 @@ if __name__ == "__main__":
         verbose=verbose,
         plot_error=True,
     )
-
-    # get a prediction
-    output = mlp.forward_propagate(X_test)
-
-    # print MSE score
-    print("MSE: ", mlp.score(true=y_test, pred=output))
